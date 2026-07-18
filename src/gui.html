@@ -34,16 +34,13 @@
   #rail{ width:300px; display:flex; flex-direction:column; background:var(--glass); }
   #pPrisma{ position:relative; height:44%; border-bottom:1px solid var(--line); }
   #pPrisma canvas{ position:absolute; inset:0; width:100%; height:100%; }
-  #ctl{ flex:1; padding:12px 16px; display:flex; flex-direction:column; gap:9px; }
-  .ctrl{ display:grid; grid-template-columns:52px 1fr 58px; align-items:center; gap:9px; }
-  .ctrl label{ font-size:8px; letter-spacing:.22em; color:var(--dim); text-transform:uppercase; }
-  .ctrl output{ font:9px Consolas,monospace; color:var(--tx); text-align:right; }
-  input[type=range]{ -webkit-appearance:none; height:20px; background:transparent; width:100%; }
-  input[type=range]::-webkit-slider-runnable-track{ height:3px; border-radius:2px;
-    background:linear-gradient(90deg,#ff3b30,#ff9500,#ffd60a,#30d158,#40c8e0,#3a7bff,#b04cff); }
-  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:13px; height:13px;
-    border-radius:50%; background:#e6e9f2; border:2px solid #05060a; margin-top:-5px;
-    box-shadow:0 0 8px rgba(160,180,255,.6); }
+  #ctl{ flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:4px; }
+  #knobs{ display:grid; grid-template-columns:1fr 1fr; gap:2px 8px; justify-items:center; }
+  .dial{ text-align:center; cursor:ns-resize; width:118px; }
+  .dial canvas{ display:block; margin:0 auto; }
+  .dial label{ display:block; font-size:8px; letter-spacing:.24em; color:var(--dim);
+               text-transform:uppercase; margin-top:1px; }
+  .dial b{ font:9px Consolas,monospace; font-weight:400; color:var(--tx); }
   .leyenda{ margin-top:auto; font:8px Consolas,monospace; color:var(--faint); line-height:1.7; }
 </style>
 </head>
@@ -64,10 +61,12 @@
     <div id="pPrisma"><span class="rotulo">refracción · el abanico es tu curva Δt(f)</span>
       <canvas id="cPrisma"></canvas></div>
     <div id="ctl">
-      <div class="ctrl"><label>spread</label><input type="range" id="spread" min="0" max="1" step="0.001"><output id="o_spread">—</output></div>
-      <div class="ctrl"><label>tilt</label><input type="range" id="tilt" min="0" max="1" step="0.001"><output id="o_tilt">—</output></div>
-      <div class="ctrl"><label>shape</label><input type="range" id="shape" min="0" max="1" step="0.001"><output id="o_shape">—</output></div>
-      <div class="ctrl"><label>mix</label><input type="range" id="mix" min="0" max="1" step="0.001"><output id="o_mix">—</output></div>
+      <div id="knobs">
+        <div class="dial" id="d_spread"></div>
+        <div class="dial" id="d_tilt"></div>
+        <div class="dial" id="d_shape"></div>
+        <div class="dial" id="d_mix"></div>
+      </div>
       <div class="leyenda">cada frecuencia llega en su momento<br>magnitud intacta — sólo tiempo</div>
     </div>
   </div>
@@ -105,26 +104,82 @@ let energiaEma=0.0001, hitFlash=0, lastEnergia=0;
 const FOT=[];
 let dragging=null;
 
-/* ═══ protocolo con el plugin ═══ */
+/* ═══ perillas (el sello) ═══ */
 const IDS=["spread","tilt","shape","mix"];
-for(const id of IDS){
-  const el=document.getElementById(id);
-  el.addEventListener("pointerdown",()=>dragging=id);
-  el.addEventListener("pointerup",()=>dragging=null);
-  el.addEventListener("input",()=>window.sendToPlugin({type:"set",id,value:parseFloat(el.value)}));
+const KNOB={};            // id -> { val (0..1), text, draw }
+function mkDial(id,label){
+  const el=document.getElementById("d_"+id), dpr=window.devicePixelRatio||1;
+  const cv=document.createElement("canvas");
+  cv.width=cv.height=(86*dpr)|0; cv.style.width=cv.style.height="86px";
+  const vb=document.createElement("b"), lb=document.createElement("label");
+  lb.textContent=label; el.append(cv,vb,lb);
+  const st={ val:0.5, text:"—" };
+  st.draw=()=>{
+    const g=cv.getContext("2d"), s=cv.width, c=s/2, r=s*0.35;
+    g.clearRect(0,0,s,s);
+    const a0=Math.PI*0.75, aFull=Math.PI*1.5;
+    for(let i=0;i<=26;i++){                              // aro de ticks
+      const a=a0+aFull*i/26, big=i%13===0;
+      g.strokeStyle=big?"#3a3f4d":"#262b38"; g.lineWidth=(big?1.5:1)*dpr;
+      g.beginPath();
+      g.moveTo(c+Math.cos(a)*r*1.18,c+Math.sin(a)*r*1.18);
+      g.lineTo(c+Math.cos(a)*r*1.32,c+Math.sin(a)*r*1.32);
+      g.stroke();
+    }
+    const a1=a0+st.val*aFull;
+    g.strokeStyle="#1b1f2a"; g.lineWidth=4.5*dpr;        // pista
+    g.beginPath(); g.arc(c,c,r,a0,a0+aFull); g.stroke();
+    let arc="#cfd6ff";
+    try{ arc=g.createConicGradient(a0,c,c);
+      STOPS.forEach((sp,i)=>arc.addColorStop(0.75*i/(STOPS.length-1),
+        `rgb(${sp[0]},${sp[1]},${sp[2]})`)); }catch(e){}
+    g.strokeStyle=arc; g.lineWidth=4.5*dpr; g.lineCap="round";  // arco espectral
+    g.beginPath(); g.arc(c,c,r,a0,a1); g.stroke();
+    g.fillStyle="#0e1118"; g.strokeStyle="#262b38"; g.lineWidth=1*dpr;  // cuerpo
+    g.beginPath(); g.arc(c,c,r*0.76,0,7); g.fill(); g.stroke();
+    g.strokeStyle="#e6e9f2"; g.lineWidth=2*dpr; g.lineCap="round";      // aguja
+    g.beginPath();
+    g.moveTo(c+Math.cos(a1)*r*0.28,c+Math.sin(a1)*r*0.28);
+    g.lineTo(c+Math.cos(a1)*r*0.70,c+Math.sin(a1)*r*0.70);
+    g.stroke();
+    vb.textContent=st.text;
+  };
+  const setv=v=>{
+    st.val=Math.min(1,Math.max(0,v));
+    window.sendToPlugin({type:"set",id,value:st.val});
+    st.draw();
+  };
+  let y0=null,v0=null;
+  el.addEventListener("pointerdown",e=>{ y0=e.clientY; v0=st.val; dragging=id;
+    el.setPointerCapture(e.pointerId); });
+  el.addEventListener("pointermove",e=>{ if(y0===null) return;
+    setv(v0+(y0-e.clientY)/170); });
+  el.addEventListener("pointerup",()=>{ y0=null; dragging=null; });
+  el.addEventListener("dblclick",()=>setv(id==="tilt"?1.0:id==="mix"?1.0:0.5));
+  el.addEventListener("wheel",e=>{ e.preventDefault();
+    setv(st.val-Math.sign(e.deltaY)*0.03); },{passive:false});
+  st.draw();
+  KNOB[id]=st;
 }
+mkDial("spread","spread"); mkDial("tilt","tilt");
+mkDial("shape","shape"); mkDial("mix","mix");
+
 window.onPluginMessage = (m)=>{
   if(m.type!=="frame") return;
   sr=m.sr||48000;
   P.spread=m.spread_v; P.tilt=m.tilt_v; P.shape=m.shape_v;
+  const textos={
+    spread: m.spread_v.toFixed(3)+" s",
+    tilt: (m.tilt_v>=0?"arco ":"caída ")+Math.abs(m.tilt_v).toFixed(2),
+    shape: m.shape_v.toFixed(2),
+    mix: (m.mix*100).toFixed(0)+" %",
+  };
   for(const id of IDS){
-    if(dragging===id) continue;
-    document.getElementById(id).value=m[id];
+    const k=KNOB[id];
+    k.text=textos[id];
+    if(dragging!==id) k.val=m[id];
+    k.draw();
   }
-  document.getElementById("o_spread").textContent=m.spread_v.toFixed(3)+" s";
-  document.getElementById("o_tilt").textContent=(m.tilt_v>=0?"arco ":"caída ")+Math.abs(m.tilt_v).toFixed(2);
-  document.getElementById("o_shape").textContent=m.shape_v.toFixed(2);
-  document.getElementById("o_mix").textContent=(m.mix*100).toFixed(0)+" %";
   document.documentElement.style.setProperty("--ab",(m.spread_v*2.2).toFixed(1)+"px");
   const a=m.audio;
   for(let i=0;i<a.length;i++){ RING[ringPos%RING.length]=a[i]; ringPos++; }
