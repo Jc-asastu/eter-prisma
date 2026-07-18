@@ -1,0 +1,21 @@
+[package]
+name = "eter_prisma"
+version = "0.1.0"
+edition = "2021"
+authors = ["Juan Cruz Maisú"]
+license = "GPL-3.0-or-later"
+homepage = "https://jcmaisu.tech"
+description = "PRISMA — dispersión espectral con curva de group-delay exacta. The first ÉTER device."
+
+[workspace]
+members = ["xtask"]
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["assert_process_allocs"] }
+
+[profile.release]
+lto = "thin"
+strip = "symbols"
