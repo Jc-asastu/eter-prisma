@@ -1,6 +1,8 @@
 //! PRISMA — dispersión espectral con curva de group-delay exacta.
 //! The first ÉTER device. F0: esqueleto gain para validar la toolchain.
 
+pub mod dsp;
+
 use nih_plug::prelude::*;
 #[cfg(feature = "webview")]
 use nih_plug_webview::{HTMLSource, WebViewEditor};
