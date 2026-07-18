@@ -76,6 +76,15 @@ impl PartitionedConv {
         self.fdl_pos = 0;
     }
 
+    /// Instala espectros pre-computados por el worker (swap de punteros,
+    /// SIN alloc/dealloc en el audio thread). Los contenedores deben venir
+    /// de un `SpectraBuilder` con el mismo (block, max_parts).
+    pub fn install(&mut self, sp: &mut Spectra) {
+        debug_assert_eq!(sp.data.len(), self.max_parts);
+        std::mem::swap(&mut self.h_spec, &mut sp.data);
+        self.parts = sp.parts;
+    }
+
     /// Procesa exactamente `block` samples in-place.
     pub fn process_block(&mut self, io: &mut [f32]) {
         debug_assert_eq!(io.len(), self.block);
@@ -105,5 +114,50 @@ impl PartitionedConv {
         for (o, v) in io.iter_mut().zip(&self.out_time[b..]) {
             *o = v * self.norm;
         }
+    }
+}
+
+/// Contenedor de espectros de kernel listo para `PartitionedConv::install`.
+pub struct Spectra {
+    pub parts: usize,
+    pub data: Vec<Vec<Complex<f32>>>,
+}
+
+/// Computa los espectros de partición en el WORKER thread (allocs permitidos
+/// solo acá; los contenedores se reciclan entre worker y audio thread).
+pub struct SpectraBuilder {
+    block: usize,
+    max_parts: usize,
+    fft: Arc<dyn RealToComplex<f32>>,
+    time_buf: Vec<f32>,
+}
+
+impl SpectraBuilder {
+    pub fn new(block: usize, max_kernel: usize) -> Self {
+        let max_parts = max_kernel.div_ceil(block).max(1);
+        let mut planner = RealFftPlanner::<f32>::new();
+        let fft = planner.plan_fft_forward(2 * block);
+        Self { block, max_parts, fft, time_buf: vec![0.0; 2 * block] }
+    }
+
+    pub fn nuevo_contenedor(&self) -> Spectra {
+        Spectra {
+            parts: 0,
+            data: vec![vec![Complex::default(); self.block + 1]; self.max_parts],
+        }
+    }
+
+    pub fn build(&mut self, h: &[f32], out: &mut Spectra) {
+        let parts = h.len().div_ceil(self.block).min(self.max_parts);
+        for p in 0..parts {
+            let a = p * self.block;
+            let b = (a + self.block).min(h.len());
+            self.time_buf[..b - a].copy_from_slice(&h[a..b]);
+            self.time_buf[b - a..].fill(0.0);
+            self.fft
+                .process(&mut self.time_buf, &mut out.data[p])
+                .expect("fft partición worker");
+        }
+        out.parts = parts;
     }
 }

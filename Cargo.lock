@@ -601,6 +601,7 @@ dependencies = [
 name = "eter_prisma"
 version = "0.1.0"
 dependencies = [
+ "crossbeam-channel",
  "hound",
  "nih_plug",
  "nih_plug_webview",

@@ -25,6 +25,7 @@ nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["a
 nih_plug_webview = { path = "vendor/nih-plug-webview", optional = true }
 serde_json = { version = "1", optional = true }
 realfft = "3"
+crossbeam-channel = "0.5"
 
 [dev-dependencies]
 hound = "3"
