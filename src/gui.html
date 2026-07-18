@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root{ --void:#05060a; --tx:#e6e9f2; --dim:#5c6070; --line:#1b1f2a; }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ background:var(--void); color:var(--tx); height:100vh; overflow:hidden;
+    font:14px Bahnschrift,"Segoe UI",sans-serif; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px; user-select:none; }
+  .marca{ font-size:22px; letter-spacing:.5em; padding-left:.35em; font-weight:600;
+    text-shadow:-1.5px 0 rgba(255,59,48,.5), 1.5px 0 rgba(64,120,255,.5); }
+  small{ color:var(--dim); letter-spacing:.2em; text-transform:uppercase; font-size:10px; }
+  .esp{ height:1px; width:180px;
+    background:linear-gradient(90deg,#ff3b30,#ff9500,#ffd60a,#30d158,#40c8e0,#3a7bff,#b04cff); }
+  input[type=range]{ width:280px; accent-color:#7c5cff; }
+  #v{ font-family:Consolas,monospace; font-size:13px; color:var(--tx); }
+</style>
+</head>
+<body>
+  <div class="marca">PRISMA</div>
+  <small>ÉTER device 0 · spike webview F0</small>
+  <div class="esp"></div>
+  <input type="range" id="g" min="0" max="1" step="0.001" value="0.5">
+  <div id="v">—</div>
+  <small>gain (el slider mueve el parámetro real del host)</small>
+<script>
+  const send = o => window.ipc.postMessage(JSON.stringify(o));
+  const g = document.getElementById('g'), v = document.getElementById('v');
+  g.addEventListener('input', () => send({ type:'SetGain', value: parseFloat(g.value) }));
+  function recibir(m){
+    try{
+      if (typeof m === 'string') m = JSON.parse(m);
+      if (m && m.type === 'param_change'){ g.value = m.value; v.textContent = m.text; }
+    }catch(e){}
+  }
+  window.onPluginMessage = recibir;                    // vía librería
+  window.addEventListener('message', e => recibir(e.data));  // fallback
+  window.addEventListener('DOMContentLoaded', () => send({ type:'Init' }));
+</script>
+</body>
+</html>

@@ -9,12 +9,21 @@ description = "PRISMA — dispersión espectral con curva de group-delay exacta.
 
 [workspace]
 members = ["xtask"]
+exclude = ["vendor"]
 
 [lib]
 crate-type = ["cdylib", "lib"]
 
+[features]
+default = []
+# GUI webview: bloqueada hasta portar vendor/nih-plug-webview a baseview/rwh
+# actuales (hallazgo del spike F0, ver docs/DESIGN.md). Plan B: VIZIA.
+webview = ["dep:nih_plug_webview", "dep:serde_json"]
+
 [dependencies]
 nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["assert_process_allocs"] }
+nih_plug_webview = { path = "vendor/nih-plug-webview", optional = true }
+serde_json = { version = "1", optional = true }
 
 [profile.release]
 lto = "thin"
