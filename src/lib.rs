@@ -8,6 +8,7 @@ use dsp::conv::{PartitionedConv, Spectra, SpectraBuilder};
 use dsp::kernel::{design_kernel, KernelParams};
 use nih_plug::prelude::*;
 use std::num::NonZeroU32;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -127,6 +128,44 @@ struct KernelMsg {
     cap_len: usize,
 }
 
+/// Tap de audio para la GUI: ring lock-free de la salida wet (mono).
+/// f32 como bits en AtomicU32 → sin UB, sin locks, costo despreciable.
+pub struct AudioTap {
+    buf: Vec<std::sync::atomic::AtomicU32>,
+    pos: std::sync::atomic::AtomicUsize,
+}
+
+impl AudioTap {
+    const LEN: usize = 4096;
+
+    fn new() -> Self {
+        Self {
+            buf: (0..Self::LEN)
+                .map(|_| std::sync::atomic::AtomicU32::new(0))
+                .collect(),
+            pos: std::sync::atomic::AtomicUsize::new(0),
+        }
+    }
+
+    #[inline]
+    fn push(&self, v: f32) {
+        let p = self.pos.load(Ordering::Relaxed);
+        self.buf[p % Self::LEN].store(v.to_bits(), Ordering::Relaxed);
+        self.pos.store(p.wrapping_add(1), Ordering::Relaxed);
+    }
+
+    /// Últimos `n` samples en orden temporal (lado GUI).
+    pub fn ultimos(&self, n: usize) -> Vec<f32> {
+        let end = self.pos.load(Ordering::Relaxed);
+        (0..n)
+            .map(|i| {
+                let idx = end.wrapping_sub(n).wrapping_add(i) % Self::LEN;
+                f32::from_bits(self.buf[idx].load(Ordering::Relaxed))
+            })
+            .collect()
+    }
+}
+
 struct ChannelDsp {
     conv_a: PartitionedConv,
     conv_b: PartitionedConv,
@@ -160,6 +199,7 @@ impl ChannelDsp {
 
 pub struct EterPrisma {
     params: Arc<PrismaParams>,
+    tap: Arc<AudioTap>,
     sr: f64,
     ch: Vec<ChannelDsp>,
     pos: usize,
@@ -177,6 +217,7 @@ impl Default for EterPrisma {
     fn default() -> Self {
         Self {
             params: Arc::new(PrismaParams::default()),
+            tap: Arc::new(AudioTap::new()),
             sr: 48000.0,
             ch: Vec::new(),
             pos: 0,
@@ -260,7 +301,9 @@ impl Plugin for EterPrisma {
         use nih_plug_webview::{HTMLSource, WebViewEditor};
         use serde_json::json;
         let params = self.params.clone();
-        let editor = WebViewEditor::new(HTMLSource::String(include_str!("gui.html")), (560, 380))
+        let tap = self.tap.clone();
+        let sr = self.sr;
+        let editor = WebViewEditor::new(HTMLSource::String(include_str!("gui.html")), (980, 620))
             .with_background_color((5, 6, 10, 255))
             .with_event_loop(move |ctx, setter| {
                 while let Ok(v) = ctx.next_event() {
@@ -284,22 +327,23 @@ impl Plugin for EterPrisma {
                                 _ => {}
                             }
                         }
-                        "init" => {
-                            ctx.send_json(json!({
-                                "type": "state",
-                                "spread": params.spread.unmodulated_normalized_value(),
-                                "spread_text": params.spread.to_string(),
-                                "tilt": params.tilt.unmodulated_normalized_value(),
-                                "tilt_text": params.tilt.to_string(),
-                                "shape": params.shape.unmodulated_normalized_value(),
-                                "shape_text": params.shape.to_string(),
-                                "mix": params.mix.unmodulated_normalized_value(),
-                                "mix_text": params.mix.to_string(),
-                            }));
-                        }
                         _ => {}
                     }
                 }
+                // frame de estado: params reales + curva + audio del tap
+                let audio = tap.ultimos(1024);
+                ctx.send_json(json!({
+                    "type": "frame",
+                    "sr": sr,
+                    "spread": params.spread.unmodulated_normalized_value(),
+                    "spread_v": params.spread.value(),
+                    "tilt": params.tilt.unmodulated_normalized_value(),
+                    "tilt_v": params.tilt.value(),
+                    "shape": params.shape.unmodulated_normalized_value(),
+                    "shape_v": params.shape.value(),
+                    "mix": params.mix.unmodulated_normalized_value(),
+                    "audio": audio,
+                }));
             });
         Some(Box::new(editor))
     }
@@ -416,7 +460,11 @@ impl Plugin for EterPrisma {
                 } else {
                     act[self.pos]
                 };
-                chan[i] = (dry * (1.0 - mix) + wet * mix) * og;
+                let y = (dry * (1.0 - mix) + wet * mix) * og;
+                chan[i] = y;
+                if ch == 0 {
+                    self.tap.push(y); // tap mono para la GUI
+                }
             }
 
             if self.fading {
