@@ -126,7 +126,7 @@ dependencies = [
  "bytemuck",
  "dispatch2",
  "dpi",
- "keyboard-types 0.8.3",
+ "keyboard-types",
  "objc2",
  "objc2-app-kit",
  "objc2-core-foundation",
@@ -1308,17 +1308,6 @@ dependencies = [
 
 [[package]]
 name = "keyboard-types"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b7668b7cff6a51fe61cdde64cd27c8a220786f399501b57ebe36f7d8112fd68"
-dependencies = [
- "bitflags 1.3.2",
- "serde",
- "unicode-segmentation",
-]
-
-[[package]]
-name = "keyboard-types"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fbe853b403ae61a04233030ae8a79d94975281ed9770a1f9e246732b534b28d"
@@ -1540,14 +1529,14 @@ dependencies = [
 
 [[package]]
 name = "nih_plug_webview"
-version = "0.0.0"
+version = "0.2.0"
 dependencies = [
  "baseview",
  "crossbeam",
- "keyboard-types 0.6.2",
+ "keyboard-types",
  "nih_plug",
- "parking_lot",
  "raw-window-handle 0.5.2",
+ "raw-window-handle 0.6.2",
  "serde_json",
  "wry",
 ]
@@ -2666,12 +2655,6 @@ name = "unicode-ident"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6f5d3c3b1bf09027a88a6bc961fc00497d651009560b5463668dc81b0fa87a8"
 
 [[package]]
 name = "url"

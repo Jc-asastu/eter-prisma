@@ -255,6 +255,55 @@ impl Plugin for EterPrisma {
         self.params.clone()
     }
 
+    #[cfg(feature = "webview")]
+    fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
+        use nih_plug_webview::{HTMLSource, WebViewEditor};
+        use serde_json::json;
+        let params = self.params.clone();
+        let editor = WebViewEditor::new(HTMLSource::String(include_str!("gui.html")), (560, 380))
+            .with_background_color((5, 6, 10, 255))
+            .with_event_loop(move |ctx, setter| {
+                while let Ok(v) = ctx.next_event() {
+                    match v.get("type").and_then(|x| x.as_str()).unwrap_or("") {
+                        "set" => {
+                            let id = v.get("id").and_then(|x| x.as_str()).unwrap_or("");
+                            let val =
+                                v.get("value").and_then(|x| x.as_f64()).unwrap_or(0.0) as f32;
+                            macro_rules! setp {
+                                ($p:expr) => {{
+                                    setter.begin_set_parameter($p);
+                                    setter.set_parameter_normalized($p, val);
+                                    setter.end_set_parameter($p);
+                                }};
+                            }
+                            match id {
+                                "spread" => setp!(&params.spread),
+                                "tilt" => setp!(&params.tilt),
+                                "shape" => setp!(&params.shape),
+                                "mix" => setp!(&params.mix),
+                                _ => {}
+                            }
+                        }
+                        "init" => {
+                            ctx.send_json(json!({
+                                "type": "state",
+                                "spread": params.spread.unmodulated_normalized_value(),
+                                "spread_text": params.spread.to_string(),
+                                "tilt": params.tilt.unmodulated_normalized_value(),
+                                "tilt_text": params.tilt.to_string(),
+                                "shape": params.shape.unmodulated_normalized_value(),
+                                "shape_text": params.shape.to_string(),
+                                "mix": params.mix.unmodulated_normalized_value(),
+                                "mix_text": params.mix.to_string(),
+                            }));
+                        }
+                        _ => {}
+                    }
+                }
+            });
+        Some(Box::new(editor))
+    }
+
     fn initialize(
         &mut self,
         _layout: &AudioIOLayout,

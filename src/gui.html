@@ -1,42 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <style>
-  :root{ --void:#05060a; --tx:#e6e9f2; --dim:#5c6070; --line:#1b1f2a; }
+  :root{ --void:#05060a; --panel:#0e1118; --line:#23232f; --tx:#e6e9f2; --dim:#5c6070; }
   *{ margin:0; padding:0; box-sizing:border-box; }
   body{ background:var(--void); color:var(--tx); height:100vh; overflow:hidden;
-    font:14px Bahnschrift,"Segoe UI",sans-serif; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:18px; user-select:none; }
-  .marca{ font-size:22px; letter-spacing:.5em; padding-left:.35em; font-weight:600;
+    font:13px Bahnschrift,"Segoe UI",sans-serif; display:flex; flex-direction:column;
+    padding:22px 28px; gap:14px; user-select:none; }
+  header{ display:flex; align-items:baseline; gap:12px; }
+  .marca{ font-size:19px; font-weight:600; letter-spacing:.5em; padding-left:.3em;
     text-shadow:-1.5px 0 rgba(255,59,48,.5), 1.5px 0 rgba(64,120,255,.5); }
-  small{ color:var(--dim); letter-spacing:.2em; text-transform:uppercase; font-size:10px; }
-  .esp{ height:1px; width:180px;
+  header small{ color:var(--dim); letter-spacing:.18em; text-transform:uppercase; font-size:9px; }
+  .esp{ height:1px; width:100%;
     background:linear-gradient(90deg,#ff3b30,#ff9500,#ffd60a,#30d158,#40c8e0,#3a7bff,#b04cff); }
-  input[type=range]{ width:280px; accent-color:#7c5cff; }
-  #v{ font-family:Consolas,monospace; font-size:13px; color:var(--tx); }
+  .ctrl{ display:grid; grid-template-columns:74px 1fr 84px; align-items:center; gap:14px; }
+  .ctrl label{ font-size:10px; letter-spacing:.22em; color:var(--dim); text-transform:uppercase; }
+  .ctrl output{ font:11px Consolas,monospace; color:var(--tx); text-align:right; }
+  input[type=range]{ -webkit-appearance:none; height:26px; background:transparent; width:100%; }
+  input[type=range]::-webkit-slider-runnable-track{ height:3px; border-radius:2px;
+    background:linear-gradient(90deg,#ff3b30,#ff9500,#ffd60a,#30d158,#40c8e0,#3a7bff,#b04cff); }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:15px; height:15px;
+    border-radius:50%; background:#e6e9f2; border:2px solid #05060a; margin-top:-6px;
+    box-shadow:0 0 10px rgba(160,180,255,.6); }
+  footer{ margin-top:auto; color:var(--dim); font-size:9px; letter-spacing:.2em;
+    text-transform:uppercase; display:flex; justify-content:space-between; }
 </style>
 </head>
 <body>
-  <div class="marca">PRISMA</div>
-  <small>ÉTER device 0 · spike webview F0</small>
+  <header><div class="marca">PRISMA</div><small>éter device 0 · dispersión espectral</small></header>
   <div class="esp"></div>
-  <input type="range" id="g" min="0" max="1" step="0.001" value="0.5">
-  <div id="v">—</div>
-  <small>gain (el slider mueve el parámetro real del host)</small>
+  <div class="ctrl"><label>spread</label><input type="range" id="spread" min="0" max="1" step="0.001"><output id="v_spread">—</output></div>
+  <div class="ctrl"><label>tilt</label><input type="range" id="tilt" min="0" max="1" step="0.001"><output id="v_tilt">—</output></div>
+  <div class="ctrl"><label>shape</label><input type="range" id="shape" min="0" max="1" step="0.001"><output id="v_shape">—</output></div>
+  <div class="ctrl"><label>mix</label><input type="range" id="mix" min="0" max="1" step="0.001"><output id="v_mix">—</output></div>
+  <footer><span>cada frecuencia llega en su momento</span><span>v0.1 · gpl-3.0</span></footer>
 <script>
-  const send = o => window.ipc.postMessage(JSON.stringify(o));
-  const g = document.getElementById('g'), v = document.getElementById('v');
-  g.addEventListener('input', () => send({ type:'SetGain', value: parseFloat(g.value) }));
-  function recibir(m){
-    try{
-      if (typeof m === 'string') m = JSON.parse(m);
-      if (m && m.type === 'param_change'){ g.value = m.value; v.textContent = m.text; }
-    }catch(e){}
+  const IDS = ["spread","tilt","shape","mix"];
+  for (const id of IDS){
+    const el = document.getElementById(id);
+    el.addEventListener("input", () =>
+      window.sendToPlugin({ type:"set", id, value: parseFloat(el.value) }));
   }
-  window.onPluginMessage = recibir;                    // vía librería
-  window.addEventListener('message', e => recibir(e.data));  // fallback
-  window.addEventListener('DOMContentLoaded', () => send({ type:'Init' }));
+  window.onPluginMessage = (m) => {
+    if (m.type !== "state") return;
+    for (const id of IDS){
+      if (m[id] !== undefined){
+        document.getElementById(id).value = m[id];
+        const t = document.getElementById("v_"+id);
+        if (m[id+"_text"] !== undefined) t.textContent = m[id+"_text"];
+      }
+    }
+  };
+  window.addEventListener("DOMContentLoaded", () =>
+    window.sendToPlugin({ type:"init" }));
 </script>
 </body>
 </html>
