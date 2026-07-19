@@ -127,9 +127,10 @@ El bridge JSON y `src/gui.html` ya existen feature-gated (`webview`).
       diff sample-a-sample máx = 2.16 (límite 3.0, ver nota abajo).
 - [x] Sanity (`tests/matrix.rs::overshoot_particionada_vs_directa`):
       PartitionedConv == convolución directa en pico (1.3637 vs 1.3637).
-- [x] pluginval strictness 10: **verde SIN webview** (SUCCESS, todos los tests
-      incl. Audio processing 44.1/48/96k × 64–1024, Automation, Plugin state,
-      Fuzz parameters). **ROJO CON webview** — ver bug abajo.
+- [x] pluginval strictness 10: verde SIN webview y, tras el fix del
+      user-data-folder (ver bug cerrado), **verde CON webview con Bitwig
+      corriendo** (SUCCESS: Audio processing, Automation, Plugin state,
+      Fuzz parameters, Editor).
 - [x] State round-trip: verificado por inspección — TODO el estado persistente
       son los 8 params de `PrismaParams` con IDs congelados (spread, tilt,
       shape, fmin, fmax, mix, out, quality). No hay campos `#[persist]` ni
@@ -148,22 +149,26 @@ El bridge JSON y `src/gui.html` ya existen feature-gated (`webview`).
   crossfade sobre la misma señal: diff ≈ 0.002. El mecanismo de fade en sí
   es suave; límite del test: 3.0.
 
-### BUG ABIERTO (bloqueante para release con GUI)
-- pluginval strictness 10 con feature `webview` ABORTA en el test "Editor":
-  panic no-unwind en `vendor/nih-plug-webview/src/lib.rs:293` —
-  WebView2 HRESULT 0x8007139F (recurso en estado incorrecto). Determinístico
-  (2/2 runs). Causa probable: `WebContext::new(Some(std::env::temp_dir()))`
-  en lib.rs:259 usa el temp dir global como user-data-folder de WebView2;
-  colisiona con el lock exclusivo de otro environment WebView2 activo
-  (Bitwig con el plugin cargado corría durante la validación). Fix candidato:
-  user-data-folder propio por proceso (p. ej. temp_dir()/eter-prisma-{pid})
-  y/o reemplazar el panic por editor degradado sin abortar el host.
-  Re-validar también sin Bitwig corriendo para aislar la condición.
+### BUG CERRADO (2026-07-18): abort del host con webview
+- Síntoma: pluginval strictness 10 con feature `webview` abortaba en el test
+  "Editor": panic no-unwind en el builder del webview — WebView2 HRESULT
+  0x8007139F. Causa: `WebContext::new(Some(std::env::temp_dir()))` usaba el
+  temp dir global como user-data-folder de WebView2 → colisión con el lock
+  exclusivo del environment WebView2 de Bitwig activo.
+- Fix (vendor/nih-plug-webview/src/lib.rs):
+  1. user-data-folder propio por proceso: `temp_dir()/eter-prisma-webview-{pid}`.
+  2. `WindowHandler.webview` pasó a `Option<WebView>`: si el webview no puede
+     construirse (runtime WebView2 ausente/roto), la ventana queda vacía y el
+     audio sigue — NUNCA un panic que aborte el host.
+- Verificación: pluginval strictness 10 CON webview y CON Bitwig corriendo
+  (la condición exacta que rompía) → SUCCESS.
+- Nota repo: `/vendor` dejó de estar gitignoreado — el fork es nuestro
+  (porteo + fixes), la GPL exige publicarlo y era la única copia en disco.
 
 ### Pendiente manual (no headless)
 - Matriz DAW en vivo: Bitwig + Reaper (Juan a oído, reporta texto). Ableton después.
 - Sesión de uso real (automation con mouse, presets, bypass del host).
-- Re-run de pluginval webview sin ningún WebView2 activo en la máquina.
+- Veredicto de Juan sobre las perillas nuevas de la GUI.
 
 ## F5-F6 (recorte ahorro)
 - Packaging: Inno Setup + README con GIF. Página /prisma y video DESPUÉS del

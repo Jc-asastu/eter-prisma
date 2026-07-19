@@ -1,4 +1,5 @@
 /target
 *.pdb
-/vendor
+/vendor/nih-plug-webview/target
+/vendor/nih-plug-webview/.git-upstream-backup
 /golden
