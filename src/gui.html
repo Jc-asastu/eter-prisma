@@ -17,49 +17,54 @@
   header small{ color:var(--dim); letter-spacing:.14em; font-size:9px; text-transform:uppercase; }
   #lect{ margin-left:auto; font:9px Consolas,monospace; color:var(--dim); display:flex; gap:14px; }
   #lect b{ color:var(--tx); font-weight:400; }
-  #cuerpo{ flex:1; display:flex; min-height:0; }
-  #visuales{ flex:1; display:flex; flex-direction:column; gap:1px; min-width:0;
-             background:var(--line); border-right:1px solid var(--line); }
+  #cuerpo{ flex:1; display:flex; flex-direction:column; min-height:0;
+           background:var(--line); gap:1px; }
   .pane{ position:relative; background:var(--panel); overflow:hidden; }
-  #pScope{ flex:3; }
-  #pFall{ flex:5; }
+  #pPrisma{ flex:1; min-height:0; }           /* escenario: el prisma manda */
+  #pFall{ height:132px; }                      /* pantalla de proyección */
+  #bottom{ height:118px; display:flex; gap:1px; background:var(--line); }
+  #pScope{ width:34%; background:var(--panel); position:relative; overflow:hidden; }
+  #ctl{ flex:1; background:var(--glass); padding:6px 14px 4px;
+        display:flex; align-items:center; }
   .pane canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
   .rotulo{ position:absolute; top:6px; left:10px; z-index:2; font-size:8px; letter-spacing:.2em;
            color:var(--faint); text-transform:uppercase; pointer-events:none; }
+  .leyenda{ position:absolute; right:12px; bottom:8px; z-index:2; text-align:right;
+            font:8px Consolas,monospace; color:var(--faint); line-height:1.7;
+            pointer-events:none; }
   #pScope::after{ content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
     background:
       repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0,0,0,0.13) 2px 3px),
       repeating-linear-gradient(to right, rgba(255,60,60,0.025) 0 1px,
         rgba(60,255,120,0.025) 1px 2px, rgba(80,120,255,0.025) 2px 3px); }
-  #rail{ width:300px; display:flex; flex-direction:column; background:var(--glass); }
-  #pPrisma{ position:relative; height:44%; border-bottom:1px solid var(--line); }
-  #pPrisma canvas{ position:absolute; inset:0; width:100%; height:100%; }
-  #ctl{ flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:4px; }
-  #knobs{ display:grid; grid-template-columns:1fr 1fr; gap:2px 8px; justify-items:center; }
-  .dial{ text-align:center; cursor:ns-resize; width:118px; }
+  #knobs{ flex:1; display:grid; grid-template-columns:repeat(4,1fr);
+          justify-items:center; align-items:center; }
+  .dial{ text-align:center; cursor:ns-resize; width:100px; }
   .dial canvas{ display:block; margin:0 auto; }
   .dial label{ display:block; font-size:8px; letter-spacing:.24em; color:var(--dim);
-               text-transform:uppercase; margin-top:1px; }
+               text-transform:uppercase; margin-top:0; }
   .dial b{ font:9px Consolas,monospace; font-weight:400; color:var(--tx); }
-  .leyenda{ margin-top:auto; font:8px Consolas,monospace; color:var(--faint); line-height:1.7; }
 </style>
 </head>
 <body>
 <header>
   <div class="marca" id="marca">PRISMA</div>
   <small>éter device 0 · dispersión espectral</small>
-  <div id="lect"><span>FPS <b id="rFps">—</b></span><span>GPL-3.0 · v0.1</span></div>
+  <div id="lect"><span>FPS <b id="rFps">—</b></span><span>GPL-3.0 · v1.0</span></div>
 </header>
 <div id="cuerpo">
-  <div id="visuales">
+  <div class="pane" id="pPrisma">
+    <span class="rotulo">refracción · el abanico es tu curva Δt(f)</span>
+    <div class="leyenda">cada frecuencia llega en su momento<br>magnitud intacta — sólo tiempo</div>
+    <canvas id="cPrisma"></canvas>
+  </div>
+  <div class="pane" id="pFall">
+    <span class="rotulo">pantalla de proyección · la luz cae sobre su frecuencia</span>
+    <canvas id="cFall"></canvas>
+  </div>
+  <div id="bottom">
     <div class="pane" id="pScope"><span class="rotulo">osciloscopio · fósforo</span>
       <canvas id="cScope"></canvas></div>
-    <div class="pane" id="pFall"><span class="rotulo">cascada espectral · color = longitud de onda</span>
-      <canvas id="cFall"></canvas></div>
-  </div>
-  <div id="rail">
-    <div id="pPrisma"><span class="rotulo">refracción · el abanico es tu curva Δt(f)</span>
-      <canvas id="cPrisma"></canvas></div>
     <div id="ctl">
       <div id="knobs">
         <div class="dial" id="d_spread"></div>
@@ -67,7 +72,6 @@
         <div class="dial" id="d_shape"></div>
         <div class="dial" id="d_mix"></div>
       </div>
-      <div class="leyenda">cada frecuencia llega en su momento<br>magnitud intacta — sólo tiempo</div>
     </div>
   </div>
 </div>
@@ -110,7 +114,7 @@ const KNOB={};            // id -> { val (0..1), text, draw }
 function mkDial(id,label){
   const el=document.getElementById("d_"+id), dpr=window.devicePixelRatio||1;
   const cv=document.createElement("canvas");
-  cv.width=cv.height=(86*dpr)|0; cv.style.width=cv.style.height="86px";
+  cv.width=cv.height=(78*dpr)|0; cv.style.width=cv.style.height="78px";
   const vb=document.createElement("b"), lb=document.createElement("label");
   lb.textContent=label; el.append(cv,vb,lb);
   const st={ val:0.5, text:"—" };
@@ -287,16 +291,19 @@ vec3 wl(float t){
 float smp(vec2 uv){ return texture(uT,uv).r; }
 void main(){
   vec2 uv=gl_FragCoord.xy/uRes;
-  float f=30.*pow(16000./30., uv.y);
+  float f=30.*pow(16000./30., uv.x);      // eje x = frecuencia (recibe al abanico)
   float bin=f/uNyq;
-  float row=fract((uHead-(1.-uv.x)*uSpan)/${TH}.0);
+  float row=fract((uHead-(1.-uv.y)*uSpan)/${TH}.0);  // lo nuevo cae desde arriba
   vec2 p=vec2(bin,row);
   float v=smp(p);
   v+=smp(p+vec2(0.,1.5/${TH}.0))*.45+smp(p-vec2(0.,1.5/${TH}.0))*.45;
   v+=smp(p+vec2(1.5/${TW}.0,0.))*.3+smp(p-vec2(1.5/${TW}.0,0.))*.3;
-  v/=2.5; v=pow(v,1.35)*1.5;
-  vec3 col=wl(uv.y)*v;
-  col+=vec3(.4,.5,.9)*pow(v,3.)*.4;
+  v/=2.5; v=pow(v,1.6)*1.9;
+  vec3 base=wl(uv.x);
+  vec3 col=base*v;
+  col+=base*pow(v,2.5)*.8;                // brillo del MISMO color, no blanco
+  float lum=dot(col,vec3(.299,.587,.114));
+  col=mix(vec3(lum),col,1.45);            // saturación extra (extrapolación)
   o=vec4(col,1.); }`;
 const FS_BLUR=`#version 300 es
 precision highp float;
@@ -316,9 +323,9 @@ out vec4 o;
 void main(){
   vec2 uv=gl_FragCoord.xy/uRes; vec2 ab=vec2(uAb,0.);
   vec3 c;
-  c.r=texture(uS,uv+ab).r+texture(uB,uv+ab).r*1.30;
-  c.g=texture(uS,uv).g+texture(uB,uv).g*1.30;
-  c.b=texture(uS,uv-ab).b+texture(uB,uv-ab).b*1.30;
+  c.r=texture(uS,uv+ab).r+texture(uB,uv+ab).r*1.05;
+  c.g=texture(uS,uv).g+texture(uB,uv).g*1.05;
+  c.b=texture(uS,uv-ab).b+texture(uB,uv-ab).b*1.05;
   float vig=1.-.38*pow(length(uv-.5)*1.35,2.);
   o=vec4(c*vig,1.); }`;
 function mkShader(t,s){ const h=gl.createShader(t); gl.shaderSource(h,s); gl.compileShader(h);
@@ -381,7 +388,7 @@ function drawFall(){
   const U=(p,n)=>gl.getUniformLocation(p,n);
   pass(pWater,tgA,[tex],p=>{ gl.uniform1i(U(p,"uT"),0);
     gl.uniform2f(U(p,"uRes"),tgA.w,tgA.h);
-    gl.uniform1f(U(p,"uHead"),head); gl.uniform1f(U(p,"uSpan"),520);
+    gl.uniform1f(U(p,"uHead"),head); gl.uniform1f(U(p,"uSpan"),360);
     gl.uniform1f(U(p,"uNyq"),sr/2); });
   pass(pBlur,tgB1,[tgA.t],p=>{ gl.uniform1i(U(p,"uT"),0);
     gl.uniform2f(U(p,"uRes"),tgB1.w,tgB1.h);
@@ -396,14 +403,34 @@ function drawFall(){
 
 /* ═══ prisma vivo ═══ */
 const cPrisma=document.getElementById("cPrisma");
+/* Geometría del escenario: el rayo de la banda t aterriza en x = t·W sobre el
+   borde inferior — la MISMA columna de frecuencia de la cascada de abajo.
+   La curva Δt(f) se ve en cuánto se comba cada rayo (delay = arco más alto)
+   y los fotones la recorren con su duración real. */
+function rayGeom(t){
+  const W=cPrisma.width, H=cPrisma.height;
+  const R=H*0.24, cx=W*0.14, cy=H*0.42;
+  const f=FMIN*Math.pow(FMAX/FMIN,t);
+  const O={x:cx+R*0.55, y:cy+R*0.10};                 // origen: cara derecha
+  const L={x:W*0.035+t*W*0.945, y:H};                  // aterrizaje por frecuencia
+  const bow=Math.min(1,curveD(f)*1.15);                // 0 = sin dispersión = recto
+  const mx=(O.x+L.x)/2, my=(O.y+L.y)/2;
+  const C={x:mx+bow*W*0.04, y:my-bow*H*0.52};          // comba hacia arriba
+  return {O,L,C};
+}
+function bez(pt,p){
+  const q=1-p;
+  return { x:q*q*pt.O.x+2*q*p*pt.C.x+p*p*pt.L.x,
+           y:q*q*pt.O.y+2*q*p*pt.C.y+p*p*pt.L.y };
+}
 function drawPrisma(){
   const g=cPrisma.getContext("2d"), W=cPrisma.width, H=cPrisma.height;
   g.clearRect(0,0,W,H);
-  const cx=W*0.42, cy=H*0.54, R=Math.min(W,H)*0.22;
+  const R=H*0.24, cx=W*0.14, cy=H*0.42;
   const A={x:cx,y:cy-R*1.15}, Bp={x:cx-R,y:cy+R*0.85}, C={x:cx+R,y:cy+R*0.85};
   const grad=g.createLinearGradient(A.x,A.y,C.x,C.y);
   grad.addColorStop(0,"rgba(200,215,255,0.30)"); grad.addColorStop(1,"rgba(200,215,255,0.06)");
-  g.lineWidth=1.2; g.strokeStyle=grad; g.fillStyle="rgba(150,170,220,0.045)";
+  g.lineWidth=1.4; g.strokeStyle=grad; g.fillStyle="rgba(150,170,220,0.045)";
   g.beginPath(); g.moveTo(A.x,A.y); g.lineTo(Bp.x,Bp.y); g.lineTo(C.x,C.y); g.closePath();
   g.fill(); g.stroke();
   // cáusticas
@@ -425,42 +452,47 @@ function drawPrisma(){
   const idle=now2-lastEnergia>1200;
   hitFlash*=0.90;
   const pulso=idle? 0.10+0.10*Math.sin(now2*0.0013):0;
-  const inY=cy+R*0.12, inX=(A.x+Bp.x)/2-R*0.15;
+  const inY=cy+R*0.10;
   g.save(); g.globalCompositeOperation="lighter";
   g.shadowColor="rgba(230,240,255,0.9)"; g.shadowBlur=8+rms*22+hitFlash*14;
   g.strokeStyle=`rgba(240,246,255,${Math.min(1,0.35+rms*0.65+pulso+hitFlash*0.3)})`;
-  g.lineWidth=2;
-  g.beginPath(); g.moveTo(0,inY); g.lineTo(inX,inY); g.stroke();
-  // abanico = curva Δt(f) real
-  const oX=(A.x+C.x)/2+R*0.10, oY=inY-R*0.05, L=W-oX-6;
+  g.lineWidth=2.2;
+  g.beginPath(); g.moveTo(0,inY); g.lineTo((A.x+Bp.x)/2-R*0.12,inY); g.stroke();
+  // abanico: béziers hacia la pantalla de proyección
   for(let i=0;i<BANDAS;i++){
-    const t=i/(BANDAS-1), f=FMIN*Math.pow(FMAX/FMIN,t);
-    const ang=-0.06+curveD(f)*1.05;
+    const t=i/(BANDAS-1);
     const e=Math.min(1, ener[i]+hitFlash*0.22);
-    const ex=oX+Math.cos(ang)*L, ey=oY-Math.sin(ang)*L;
-    const cg=g.createLinearGradient(oX,oY,ex,ey);
-    cg.addColorStop(0,wlCss(t,0.10+e*0.85)); cg.addColorStop(1,wlCss(t,0));
-    g.shadowColor=wlCss(t,0.8); g.shadowBlur=3+e*14;
-    g.strokeStyle=cg; g.lineWidth=1.1+e*2.2;
-    g.beginPath(); g.moveTo(oX,oY); g.lineTo(ex,ey); g.stroke();
+    const pt=rayGeom(t);
+    const cg=g.createLinearGradient(pt.O.x,pt.O.y,pt.L.x,pt.L.y);
+    cg.addColorStop(0,wlCss(t,0.06+e*0.55));
+    cg.addColorStop(1,wlCss(t,0.16+e*0.80));           // más vivo donde aterriza
+    g.shadowColor=wlCss(t,0.8); g.shadowBlur=3+e*16;
+    g.strokeStyle=cg; g.lineWidth=1.2+e*2.6;
+    g.beginPath(); g.moveTo(pt.O.x,pt.O.y);
+    g.quadraticCurveTo(pt.C.x,pt.C.y,pt.L.x,pt.L.y); g.stroke();
+    // glow de aterrizaje: alimenta visualmente la columna de la cascada
+    if(e>0.04){
+      g.shadowColor=wlCss(t,1); g.shadowBlur=12+e*16;
+      g.fillStyle=wlCss(t,0.25+e*0.6);
+      g.beginPath(); g.arc(pt.L.x,H-2,1.5+e*3.5,0,7); g.fill();
+    }
   }
-  // fotones
+  // fotones: recorren su bézier con su Δt real
   const now=performance.now();
   for(let i=FOT.length-1;i>=0;i--){
     const ft=FOT[i], p=(now-ft.born)/ft.dur;
     if(p>1.14){ FOT.splice(i,1); continue; }
-    const f=FMIN*Math.pow(FMAX/FMIN,ft.t);
-    const ang=-0.06+curveD(f)*1.05;
+    const pt=rayGeom(ft.t);
     if(p<=1){
-      const px=oX+Math.cos(ang)*L*p, py=oY-Math.sin(ang)*L*p;
+      const b=bez(pt,p);
       g.shadowColor=wlCss(ft.t,1); g.shadowBlur=10;
-      g.fillStyle=wlCss(ft.t,0.85*(1-p*0.35));
-      g.beginPath(); g.arc(px,py,1.4+(1-p)*1.4,0,7); g.fill();
+      g.fillStyle=wlCss(ft.t,0.85*(1-p*0.30));
+      g.beginPath(); g.arc(b.x,b.y,1.6+(1-p)*1.6,0,7); g.fill();
     } else {
-      const q=(p-1)/0.14, px=oX+Math.cos(ang)*L, py=oY-Math.sin(ang)*L;
-      g.shadowColor=wlCss(ft.t,1); g.shadowBlur=18;
+      const q=(p-1)/0.14;
+      g.shadowColor=wlCss(ft.t,1); g.shadowBlur=20;
       g.fillStyle=wlCss(ft.t,0.9*(1-q));
-      g.beginPath(); g.arc(px,py,2+q*6,0,7); g.fill();
+      g.beginPath(); g.arc(pt.L.x,H-3,2.5+q*7,0,7); g.fill();
     }
   }
   g.restore();
