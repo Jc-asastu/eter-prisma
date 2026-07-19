@@ -25,7 +25,11 @@
   #bottom{ height:118px; display:flex; gap:1px; background:var(--line); }
   #pScope{ width:34%; background:var(--panel); position:relative; overflow:hidden; }
   #ctl{ flex:1; background:var(--glass); padding:6px 14px 4px;
-        display:flex; align-items:center; }
+        display:flex; align-items:center; position:relative; }
+  #firma{ position:absolute; right:12px; bottom:5px; font-size:8px;
+          letter-spacing:.16em; text-transform:uppercase; color:var(--faint);
+          pointer-events:none; }
+  #firma b{ color:var(--oro); font-weight:400; }
   .pane canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
   .rotulo{ position:absolute; top:6px; left:10px; z-index:2; font-size:8px; letter-spacing:.2em;
            color:var(--faint); text-transform:uppercase; pointer-events:none; font-weight:700; }
@@ -137,6 +141,7 @@ D(f) = spread · ( w · t^shape + (1−w) · (1 − t^shape) )</div>
       <div class="pie">
         <span>Free as in freedom — GPL-3.0. Open the source and read the light.</span>
         <span id="ghLink">github.com/Jc-asastu/eter-prisma</span>
+        <span>Created with <b style="color:var(--oro);font-weight:400">&hearts;</b> by Asastu</span>
       </div>
     </div>
   </div>
@@ -161,6 +166,7 @@ D(f) = spread · ( w · t^shape + (1−w) · (1 − t^shape) )</div>
         <div class="dial" id="d_shape"></div>
         <div class="dial" id="d_mix"></div>
       </div>
+      <span id="firma">created with <b>&hearts;</b> by Asastu</span>
     </div>
   </div>
 </div>
