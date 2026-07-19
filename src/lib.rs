@@ -73,9 +73,9 @@ impl Default for PrismaParams {
             tilt: FloatParam::new("Tilt", 1.0, FloatRange::Linear { min: -1.0, max: 1.0 })
                 .with_value_to_string(Arc::new(|v| {
                     if v >= 0.0 {
-                        format!("arco {:.2}", v)
+                        format!("arc {:.2}", v)
                     } else {
-                        format!("caída {:.2}", -v)
+                        format!("fall {:.2}", -v)
                     }
                 })),
             shape: FloatParam::new(
@@ -325,6 +325,19 @@ impl Plugin for EterPrisma {
                                 "shape" => setp!(&params.shape),
                                 "mix" => setp!(&params.mix),
                                 _ => {}
+                            }
+                        }
+                        // abre el repo en el browser del sistema; la URL es
+                        // FIJA acá — el JS no puede pedir URLs arbitrarias
+                        "open_url" => {
+                            #[cfg(target_os = "windows")]
+                            {
+                                use std::os::windows::process::CommandExt;
+                                const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+                                let _ = std::process::Command::new("cmd")
+                                    .args(["/C", "start", "", "https://github.com/Jc-asastu/eter-prisma"])
+                                    .creation_flags(CREATE_NO_WINDOW)
+                                    .spawn();
                             }
                         }
                         _ => {}

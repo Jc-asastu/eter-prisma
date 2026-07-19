@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <style>
@@ -44,26 +44,115 @@
   .dial label{ display:block; font-size:8px; letter-spacing:.24em; color:var(--dim);
                text-transform:uppercase; margin-top:0; }
   .dial b{ font:9px Consolas,monospace; font-weight:400; color:var(--tx); }
+  /* ── overlay: how this works ── */
+  #btnHow{ cursor:pointer; color:var(--dim); letter-spacing:.18em;
+           text-transform:uppercase; transition:color .25s; }
+  #btnHow:hover{ color:var(--tx); }
+  #ovHow{ position:fixed; inset:0; z-index:50; display:none; align-items:center;
+          justify-content:center; background:rgba(5,6,10,0.88); }
+  #ovWrap{ position:relative; }
+  #ovCard{ width:640px; max-height:540px; overflow-y:auto; background:var(--glass);
+           border:1px solid var(--line2); padding:26px 34px 22px;
+           font:12px/1.75 Bahnschrift,"Segoe UI",sans-serif; color:var(--tx); }
+  #ovCard::-webkit-scrollbar{ width:6px; }
+  #ovCard::-webkit-scrollbar-thumb{ background:var(--line2); }
+  #ovCard h1{ font-size:14px; font-weight:600; letter-spacing:.5em; margin-bottom:2px;
+    text-shadow:-1.5px 0 rgba(255,59,48,.55), 1.5px 0 rgba(64,120,255,.55); }
+  #ovCard h2{ font-size:9px; letter-spacing:.3em; text-transform:uppercase;
+              color:var(--dim); margin:16px 0 3px; }
+  #ovCard p{ color:#c7ccd9; }
+  #ovCard .frm{ font:11px/1.9 Consolas,monospace; color:var(--tx);
+                background:var(--panel); border:1px solid var(--line);
+                padding:8px 14px; margin:6px 0; white-space:pre; overflow-x:auto; }
+  #ovCard .pie{ margin-top:18px; padding-top:12px; border-top:1px solid var(--line);
+                display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+                font:10px Consolas,monospace; color:var(--dim); }
+  #ovCard #ghLink{ color:#9db4ff; cursor:pointer; user-select:all;
+                   border-bottom:1px dotted #3a4a7a; }
+  #ovCard #ghLink:hover{ color:#c9d6ff; }
+  #ovX{ position:absolute; top:12px; right:16px; z-index:2; cursor:pointer;
+        color:var(--dim); font:16px Consolas,monospace; transition:color .2s; }
+  #ovX:hover{ color:var(--tx); }
+  #ovDiag{ display:block; margin:8px auto 0; }
 </style>
 </head>
 <body>
 <header>
   <div class="marca" id="marca">PRISMA</div>
-  <small>éter device 0 · dispersión espectral</small>
-  <div id="lect"><span>FPS <b id="rFps">—</b></span><span>GPL-3.0 · v1.0</span></div>
+  <small>éter device 0 · spectral dispersion</small>
+  <div id="lect"><span id="btnHow">how this works</span><span>FPS <b id="rFps">—</b></span><span>GPL-3.0 · v1.0</span></div>
 </header>
+<div id="ovHow">
+  <div id="ovWrap">
+    <span id="ovX">✕</span>
+    <div id="ovCard">
+      <h1>PRISMA</h1>
+      <small style="color:var(--dim);letter-spacing:.14em;font-size:9px;text-transform:uppercase">how this works</small>
+      <svg id="ovDiag" width="360" height="96" viewBox="0 0 360 96">
+        <line x1="0" y1="52" x2="130" y2="52" stroke="#eef4ff" stroke-width="2"/>
+        <polygon points="160,12 122,80 198,80" fill="rgba(150,170,220,0.06)"
+                 stroke="rgba(200,215,255,0.35)" stroke-width="1.2"/>
+        <line x1="172" y1="48" x2="356" y2="14" stroke="#ff3b30" stroke-width="1.6" opacity=".85"/>
+        <line x1="172" y1="49" x2="356" y2="30" stroke="#ffd60a" stroke-width="1.6" opacity=".85"/>
+        <line x1="172" y1="50" x2="356" y2="48" stroke="#30d158" stroke-width="1.6" opacity=".85"/>
+        <line x1="172" y1="51" x2="356" y2="66" stroke="#3a7bff" stroke-width="1.6" opacity=".85"/>
+        <line x1="172" y1="52" x2="356" y2="84" stroke="#b04cff" stroke-width="1.6" opacity=".85"/>
+      </svg>
+      <h2>light</h2>
+      <p>Inside glass, every wavelength travels at its own speed — that is why a
+      prism fans white light into a rainbow. Newton did this to sunlight in 1666.
+      PRISMA does it to your kick drum. Same physics, different century, louder
+      laboratory.</p>
+      <h2>the curve</h2>
+      <p>You are drawing a group-delay curve D(f): how many seconds each frequency
+      arrives late, mapped logarithmically between F&nbsp;Min and F&nbsp;Max.
+      Straight from the blackboard:</p>
+      <div class="frm">t    = log(f / fmin) / log(fmax / fmin)      0..1
+w    = (tilt + 1) / 2
+D(f) = spread · ( w · t^shape + (1−w) · (1 − t^shape) )</div>
+      <p style="font-size:10px;color:var(--dim)">Yes — this is the actual curve
+      your knobs are drawing. No marketing physics in this laboratory.</p>
+      <h2>pure phase</h2>
+      <p>The curve is integrated into phase, and only phase:</p>
+      <div class="frm">φ(f) = −2π · ∫₀^f D(ν) dν        |H(f)| = 1 everywhere</div>
+      <p>Magnitude one, at every frequency, always. PRISMA never touches your
+      levels — no EQ, no resonance, no secret sauce. Only time. Every frequency
+      still arrives — just fashionably late.</p>
+      <h2>the engine</h2>
+      <p>That spectrum becomes an exact FIR kernel (up to 2 seconds of pure
+      delay-per-frequency), computed on a worker thread so the audio path never
+      waits for math. Playback runs through uniform partitioned convolution —
+      overlap-save, FFT, the classics. Turn a knob and the new kernel slides in
+      through two parallel convolvers with a 2048-sample crossfade: no clicks,
+      no zipper, no drama. The fixed 512-sample block is reported to your DAW
+      as latency, so your timeline never finds out.</p>
+      <h2>the knobs</h2>
+      <p><b>spread</b> — how wide the temporal fan opens. Seconds of dispersion;
+      the size of your rainbow.<br>
+      <b>tilt</b> — who gets to be late: +1 the highs (rising chirp), −1 the lows
+      (falling drop), and every diplomacy in between.<br>
+      <b>shape</b> — the curvature of the dispersion law, from soft liquid
+      sweeps to laser chirps.<br>
+      <b>mix</b> — dry/wet. The dry path is delay-compensated, because fairness.</p>
+      <div class="pie">
+        <span>Free as in freedom — GPL-3.0. Open the source and read the light.</span>
+        <span id="ghLink">github.com/Jc-asastu/eter-prisma</span>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="cuerpo">
   <div class="pane" id="pPrisma">
-    <span class="rotulo">refracción · el abanico es tu curva Δt(f)</span>
-    <div class="leyenda">cada frecuencia llega en su momento<br>magnitud intacta — sólo tiempo</div>
+    <span class="rotulo">refraction · the fan is your Δt(f) curve</span>
+    <div class="leyenda">every frequency arrives in its own time<br>magnitude intact — time only</div>
     <canvas id="cPrisma"></canvas>
   </div>
   <div class="pane" id="pFall">
-    <span class="rotulo">espectrómetro · color = longitud de onda</span>
+    <span class="rotulo">spectrometer · color = wavelength</span>
     <canvas id="cFall"></canvas>
   </div>
   <div id="bottom">
-    <div class="pane" id="pScope"><span class="rotulo">osciloscopio · fósforo</span>
+    <div class="pane" id="pScope"><span class="rotulo">oscilloscope · phosphor</span>
       <canvas id="cScope"></canvas></div>
     <div id="ctl">
       <div id="knobs">
@@ -168,13 +257,24 @@ function mkDial(id,label){
 mkDial("spread","spread"); mkDial("tilt","tilt");
 mkDial("shape","shape"); mkDial("mix","mix");
 
+/* ═══ overlay: how this works ═══ */
+const ovHow=document.getElementById("ovHow");
+document.getElementById("btnHow").addEventListener("click",()=>{ ovHow.style.display="flex"; });
+document.getElementById("ovX").addEventListener("click",()=>{ ovHow.style.display="none"; });
+ovHow.addEventListener("click",e=>{ if(e.target===ovHow) ovHow.style.display="none"; });
+window.addEventListener("keydown",e=>{ if(e.key==="Escape") ovHow.style.display="none"; });
+document.getElementById("ghLink").addEventListener("click",()=>{
+  window.sendToPlugin({type:"open_url"});   // la URL vive en Rust (fija, sin IPC arbitrario)
+});
+if(location.hash==="#how") ovHow.style.display="flex";   // atajo para capturas
+
 window.onPluginMessage = (m)=>{
   if(m.type!=="frame") return;
   sr=m.sr||48000;
   P.spread=m.spread_v; P.tilt=m.tilt_v; P.shape=m.shape_v;
   const textos={
     spread: m.spread_v.toFixed(3)+" s",
-    tilt: (m.tilt_v>=0?"arco ":"caída ")+Math.abs(m.tilt_v).toFixed(2),
+    tilt: (m.tilt_v>=0?"arc ":"fall ")+Math.abs(m.tilt_v).toFixed(2),
     shape: m.shape_v.toFixed(2),
     mix: (m.mix*100).toFixed(0)+" %",
   };
