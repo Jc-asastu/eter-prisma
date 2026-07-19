@@ -8,7 +8,7 @@ No feedback networks, no allpass chains approximating the effect — the curve
 D(f) you draw is the curve you get, rendered as an exact FIR kernel and
 convolved in real time.
 
-<!-- TODO: GIF demo (pendiente: captura de la GUI en uso) -->
+![ÉTER PRISMA — optical bench GUI](docs/demo.gif)
 
 ## What it does
 
@@ -20,8 +20,10 @@ convolved in real time.
 - **F Min / F Max**: the frequency band the dispersion curve spans.
 - **Mix / Output / Quality** (Eco 0.5 s · Normal 1 s · Max 2 s kernel cap).
 
-The GUI is an *optical bench*: live waterfall, phosphor oscilloscope, and a
-prism whose fan is the actual D(f) curve of your current parameters.
+The GUI is an *optical bench*: a living prism whose fan IS the D(f) curve of
+your current parameters, photons that travel each ray with their real
+per-frequency delay, a particle spectrometer (color = wavelength) and a
+phosphor oscilloscope.
 
 ## Formats
 

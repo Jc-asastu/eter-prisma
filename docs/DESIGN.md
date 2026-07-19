@@ -180,10 +180,25 @@ El bridge JSON y `src/gui.html` ya existen feature-gated (`webview`).
       TODO dentro del README: GIF demo (captura manual pendiente).
 - [x] `LICENSE` — texto GPL-3.0 completo (faltaba; Cargo.toml ya la declaraba).
 
-## F6 — Release (pendiente, necesita go de Juan)
-- Decisiones antes del tag v1.0.0:
-  1. Bump `Cargo.toml` 0.1.0 → 1.0.0 (el installer ya dice 1.0.0).
-  2. Quitar "(dev)" del NAME del plugin en lib.rs (no toca IDs de params).
-  3. GIF del README.
-- gh repo create (público) + tag v1.0.0 + binarios (setup.exe + zips).
-  KVR listing manual. Página /prisma y video DESPUÉS (no bloquean).
+## F6 — Release (servido; el disparo necesita el go de Juan)
+
+### Pre-requisitos completados
+- [x] Bump `Cargo.toml` → 1.0.0 + NAME final "ETER PRISMA" sin (dev)
+      (commit 52e8ae8; pluginval confirma mismo class-ID → proyectos a salvo).
+- [x] GUI final: layout jerarquía prisma (28b235e→8d19969) + espectrómetro
+      de partículas con contraste adaptativo (31d1c81).
+- [x] GIF demo del README (docs/demo.gif, captura headless determinista).
+- [x] `docs/RELEASE_NOTES.md` — borrador v1.0.0 completo.
+- [x] Installer compilado con binarios v1.0.0.
+
+### Checklist de disparo (SOLO con el "publicá" explícito de Juan)
+- [ ] Veredicto visual de Juan del espectrómetro de partículas (pendiente).
+- [ ] QA a oído en Bitwig/Reaper por Juan (pendiente-manual, no headless).
+- [ ] `gh repo create` público + push.
+- [ ] Tag v1.0.0 + GitHub Release con: setup.exe + zip VST3 + zip CLAP +
+      release notes.
+- [ ] KVR listing manual. Página /prisma y video DESPUÉS (no bloquean).
+
+### Nota operativa
+- Bitwig abierto lockea `Common Files` → instalar la v1.0.0 local solo con
+  Bitwig cerrado (o vía setup.exe cuando Juan quiera).
