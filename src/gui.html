@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <style>
   :root{ --void:#05060a; --panel:#0a0c12; --glass:#0e1118; --line:#1b1f2a; --line2:#262b38;
-         --tx:#e6e9f2; --dim:#5c6070; --faint:#3a3f4d; --ab:0px; }
+         --tx:#f2ecda; --dim:#c7bfa8; --faint:#8f8875; --oro:#e6c87c; --ab:0px; }
   *{ margin:0; padding:0; box-sizing:border-box; }
   html,body{ height:100%; }
   body{ background:var(--void); color:var(--tx); overflow:hidden; user-select:none;
@@ -14,9 +14,9 @@
   .marca{ font-size:16px; font-weight:600; letter-spacing:.5em; padding-left:.2em;
     text-shadow:calc(-1.5px - var(--ab)) 0 rgba(255,59,48,.55),
                 calc( 1.5px + var(--ab)) 0 rgba(64,120,255,.55); }
-  header small{ color:var(--dim); letter-spacing:.14em; font-size:9px; text-transform:uppercase; }
+  header small{ color:var(--dim); letter-spacing:.14em; font-size:9px; text-transform:uppercase; font-weight:600; }
   #lect{ margin-left:auto; font:9px Consolas,monospace; color:var(--dim); display:flex; gap:14px; }
-  #lect b{ color:var(--tx); font-weight:400; }
+  #lect b{ color:var(--oro); font-weight:700; }
   #cuerpo{ flex:1; display:flex; flex-direction:column; min-height:0;
            background:var(--line); gap:1px; }
   .pane{ position:relative; background:var(--panel); overflow:hidden; }
@@ -28,7 +28,7 @@
         display:flex; align-items:center; }
   .pane canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
   .rotulo{ position:absolute; top:6px; left:10px; z-index:2; font-size:8px; letter-spacing:.2em;
-           color:var(--faint); text-transform:uppercase; pointer-events:none; }
+           color:var(--faint); text-transform:uppercase; pointer-events:none; font-weight:700; }
   .leyenda{ position:absolute; right:12px; bottom:8px; z-index:2; text-align:right;
             font:8px Consolas,monospace; color:var(--faint); line-height:1.7;
             pointer-events:none; }
@@ -42,8 +42,8 @@
   .dial{ text-align:center; cursor:ns-resize; width:100px; }
   .dial canvas{ display:block; margin:0 auto; }
   .dial label{ display:block; font-size:8px; letter-spacing:.24em; color:var(--dim);
-               text-transform:uppercase; margin-top:0; }
-  .dial b{ font:9px Consolas,monospace; font-weight:400; color:var(--tx); }
+               text-transform:uppercase; margin-top:0; font-weight:700; }
+  .dial b{ font:9px Consolas,monospace; font-weight:700; color:var(--oro); }
   /* ── overlay: how this works ── */
   #btnHow{ cursor:pointer; color:var(--dim); letter-spacing:.18em;
            text-transform:uppercase; transition:color .25s; }
@@ -60,7 +60,7 @@
     text-shadow:-1.5px 0 rgba(255,59,48,.55), 1.5px 0 rgba(64,120,255,.55); }
   #ovCard h2{ font-size:9px; letter-spacing:.3em; text-transform:uppercase;
               color:var(--dim); margin:16px 0 3px; }
-  #ovCard p{ color:#c7ccd9; }
+  #ovCard p{ color:#ddd6c2; }
   #ovCard .frm{ font:11px/1.9 Consolas,monospace; color:var(--tx);
                 background:var(--panel); border:1px solid var(--line);
                 padding:8px 14px; margin:6px 0; white-space:pre; overflow-x:auto; }
@@ -584,7 +584,7 @@ function drawPrisma(){
     }
   }
   g.restore();
-  g.fillStyle="rgba(92,96,112,0.9)"; g.font="9px Consolas,monospace";
+  g.fillStyle="rgba(199,191,168,0.95)"; g.font="bold 9px Consolas,monospace";
   g.fillText(`Δt sub ${(curveD(60)*1000)|0} ms · 1k ${(curveD(1000)*1000)|0} ms · 8k ${(curveD(8000)*1000)|0} ms`, 10, H-8);
 }
 

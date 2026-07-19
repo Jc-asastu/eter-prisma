@@ -4,7 +4,7 @@
 ; Los bundles se toman de ..\target\bundled\
 
 #define AppName "ETER PRISMA"
-#define AppVersion "1.0.0"
+#define AppVersion "1.0.1"
 #define AppPublisher "Juan Cruz Maisu"
 #define AppURL "https://jcmaisu.tech"
 
