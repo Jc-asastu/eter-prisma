@@ -170,7 +170,20 @@ El bridge JSON y `src/gui.html` ya existen feature-gated (`webview`).
 - Sesión de uso real (automation con mouse, presets, bypass del host).
 - Veredicto de Juan sobre las perillas nuevas de la GUI.
 
-## F5-F6 (recorte ahorro)
-- Packaging: Inno Setup + README con GIF. Página /prisma y video DESPUÉS del
-  release binario (no bloquean v1.0.0).
-- Release: gh repo create (público) + tag v1.0.0 + binarios. KVR listing manual.
+## F5 — Packaging (resultados 2026-07-18)
+- [x] `installer/eter-prisma.iss` (Inno Setup 6, instalado vía winget en
+      `%LOCALAPPDATA%\Programs\Inno Setup 6`). Compila verde:
+      `installer/output/eter-prisma-1.0.0-win64-setup.exe` (gitignoreado).
+      Instala VST3 (bundle-dir) a `Common Files\VST3\ETER PRISMA.vst3` y
+      CLAP a `Common Files\CLAP\ETER PRISMA.clap`; componentes elegibles.
+- [x] `README.md` — pitch, params, formatos, install, build, QA, GPL.
+      TODO dentro del README: GIF demo (captura manual pendiente).
+- [x] `LICENSE` — texto GPL-3.0 completo (faltaba; Cargo.toml ya la declaraba).
+
+## F6 — Release (pendiente, necesita go de Juan)
+- Decisiones antes del tag v1.0.0:
+  1. Bump `Cargo.toml` 0.1.0 → 1.0.0 (el installer ya dice 1.0.0).
+  2. Quitar "(dev)" del NAME del plugin en lib.rs (no toca IDs de params).
+  3. GIF del README.
+- gh repo create (público) + tag v1.0.0 + binarios (setup.exe + zips).
+  KVR listing manual. Página /prisma y video DESPUÉS (no bloquean).
