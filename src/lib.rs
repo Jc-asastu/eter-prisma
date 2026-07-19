@@ -267,7 +267,7 @@ impl EterPrisma {
 }
 
 impl Plugin for EterPrisma {
-    const NAME: &'static str = "ETER PRISMA (dev)";
+    const NAME: &'static str = "ETER PRISMA";
     const VENDOR: &'static str = "Juan Cruz Maisu";
     const URL: &'static str = "https://jcmaisu.tech";
     const EMAIL: &'static str = "juancmaisu@outlook.com";
