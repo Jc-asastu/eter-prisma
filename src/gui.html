@@ -59,7 +59,7 @@
     <canvas id="cPrisma"></canvas>
   </div>
   <div class="pane" id="pFall">
-    <span class="rotulo">pantalla de proyección · la luz cae sobre su frecuencia</span>
+    <span class="rotulo">espectrómetro · color = longitud de onda</span>
     <canvas id="cFall"></canvas>
   </div>
   <div id="bottom">
@@ -403,34 +403,14 @@ function drawFall(){
 
 /* ═══ prisma vivo ═══ */
 const cPrisma=document.getElementById("cPrisma");
-/* Geometría del escenario: el rayo de la banda t aterriza en x = t·W sobre el
-   borde inferior — la MISMA columna de frecuencia de la cascada de abajo.
-   La curva Δt(f) se ve en cuánto se comba cada rayo (delay = arco más alto)
-   y los fotones la recorren con su duración real. */
-function rayGeom(t){
-  const W=cPrisma.width, H=cPrisma.height;
-  const R=H*0.24, cx=W*0.14, cy=H*0.42;
-  const f=FMIN*Math.pow(FMAX/FMIN,t);
-  const O={x:cx+R*0.55, y:cy+R*0.10};                 // origen: cara derecha
-  const L={x:W*0.035+t*W*0.945, y:H};                  // aterrizaje por frecuencia
-  const bow=Math.min(1,curveD(f)*1.15);                // 0 = sin dispersión = recto
-  const mx=(O.x+L.x)/2, my=(O.y+L.y)/2;
-  const C={x:mx+bow*W*0.04, y:my-bow*H*0.52};          // comba hacia arriba
-  return {O,L,C};
-}
-function bez(pt,p){
-  const q=1-p;
-  return { x:q*q*pt.O.x+2*q*p*pt.C.x+p*p*pt.L.x,
-           y:q*q*pt.O.y+2*q*p*pt.C.y+p*p*pt.L.y };
-}
 function drawPrisma(){
   const g=cPrisma.getContext("2d"), W=cPrisma.width, H=cPrisma.height;
   g.clearRect(0,0,W,H);
-  const R=H*0.24, cx=W*0.14, cy=H*0.42;
+  const cx=W*0.42, cy=H*0.54, R=Math.min(W,H)*0.22;
   const A={x:cx,y:cy-R*1.15}, Bp={x:cx-R,y:cy+R*0.85}, C={x:cx+R,y:cy+R*0.85};
   const grad=g.createLinearGradient(A.x,A.y,C.x,C.y);
   grad.addColorStop(0,"rgba(200,215,255,0.30)"); grad.addColorStop(1,"rgba(200,215,255,0.06)");
-  g.lineWidth=1.4; g.strokeStyle=grad; g.fillStyle="rgba(150,170,220,0.045)";
+  g.lineWidth=1.2; g.strokeStyle=grad; g.fillStyle="rgba(150,170,220,0.045)";
   g.beginPath(); g.moveTo(A.x,A.y); g.lineTo(Bp.x,Bp.y); g.lineTo(C.x,C.y); g.closePath();
   g.fill(); g.stroke();
   // cáusticas
@@ -452,47 +432,42 @@ function drawPrisma(){
   const idle=now2-lastEnergia>1200;
   hitFlash*=0.90;
   const pulso=idle? 0.10+0.10*Math.sin(now2*0.0013):0;
-  const inY=cy+R*0.10;
+  const inY=cy+R*0.12, inX=(A.x+Bp.x)/2-R*0.15;
   g.save(); g.globalCompositeOperation="lighter";
   g.shadowColor="rgba(230,240,255,0.9)"; g.shadowBlur=8+rms*22+hitFlash*14;
   g.strokeStyle=`rgba(240,246,255,${Math.min(1,0.35+rms*0.65+pulso+hitFlash*0.3)})`;
-  g.lineWidth=2.2;
-  g.beginPath(); g.moveTo(0,inY); g.lineTo((A.x+Bp.x)/2-R*0.12,inY); g.stroke();
-  // abanico: béziers hacia la pantalla de proyección
+  g.lineWidth=2;
+  g.beginPath(); g.moveTo(0,inY); g.lineTo(inX,inY); g.stroke();
+  // abanico = curva Δt(f) real
+  const oX=(A.x+C.x)/2+R*0.10, oY=inY-R*0.05, L=W-oX-6;
   for(let i=0;i<BANDAS;i++){
-    const t=i/(BANDAS-1);
+    const t=i/(BANDAS-1), f=FMIN*Math.pow(FMAX/FMIN,t);
+    const ang=-0.06+curveD(f)*1.05;
     const e=Math.min(1, ener[i]+hitFlash*0.22);
-    const pt=rayGeom(t);
-    const cg=g.createLinearGradient(pt.O.x,pt.O.y,pt.L.x,pt.L.y);
-    cg.addColorStop(0,wlCss(t,0.06+e*0.55));
-    cg.addColorStop(1,wlCss(t,0.16+e*0.80));           // más vivo donde aterriza
-    g.shadowColor=wlCss(t,0.8); g.shadowBlur=3+e*16;
-    g.strokeStyle=cg; g.lineWidth=1.2+e*2.6;
-    g.beginPath(); g.moveTo(pt.O.x,pt.O.y);
-    g.quadraticCurveTo(pt.C.x,pt.C.y,pt.L.x,pt.L.y); g.stroke();
-    // glow de aterrizaje: alimenta visualmente la columna de la cascada
-    if(e>0.04){
-      g.shadowColor=wlCss(t,1); g.shadowBlur=12+e*16;
-      g.fillStyle=wlCss(t,0.25+e*0.6);
-      g.beginPath(); g.arc(pt.L.x,H-2,1.5+e*3.5,0,7); g.fill();
-    }
+    const ex=oX+Math.cos(ang)*L, ey=oY-Math.sin(ang)*L;
+    const cg=g.createLinearGradient(oX,oY,ex,ey);
+    cg.addColorStop(0,wlCss(t,0.10+e*0.85)); cg.addColorStop(1,wlCss(t,0));
+    g.shadowColor=wlCss(t,0.8); g.shadowBlur=3+e*14;
+    g.strokeStyle=cg; g.lineWidth=1.1+e*2.2;
+    g.beginPath(); g.moveTo(oX,oY); g.lineTo(ex,ey); g.stroke();
   }
-  // fotones: recorren su bézier con su Δt real
+  // fotones
   const now=performance.now();
   for(let i=FOT.length-1;i>=0;i--){
     const ft=FOT[i], p=(now-ft.born)/ft.dur;
     if(p>1.14){ FOT.splice(i,1); continue; }
-    const pt=rayGeom(ft.t);
+    const f=FMIN*Math.pow(FMAX/FMIN,ft.t);
+    const ang=-0.06+curveD(f)*1.05;
     if(p<=1){
-      const b=bez(pt,p);
+      const px=oX+Math.cos(ang)*L*p, py=oY-Math.sin(ang)*L*p;
       g.shadowColor=wlCss(ft.t,1); g.shadowBlur=10;
-      g.fillStyle=wlCss(ft.t,0.85*(1-p*0.30));
-      g.beginPath(); g.arc(b.x,b.y,1.6+(1-p)*1.6,0,7); g.fill();
+      g.fillStyle=wlCss(ft.t,0.85*(1-p*0.35));
+      g.beginPath(); g.arc(px,py,1.4+(1-p)*1.4,0,7); g.fill();
     } else {
-      const q=(p-1)/0.14;
-      g.shadowColor=wlCss(ft.t,1); g.shadowBlur=20;
+      const q=(p-1)/0.14, px=oX+Math.cos(ang)*L, py=oY-Math.sin(ang)*L;
+      g.shadowColor=wlCss(ft.t,1); g.shadowBlur=18;
       g.fillStyle=wlCss(ft.t,0.9*(1-q));
-      g.beginPath(); g.arc(pt.L.x,H-3,2.5+q*7,0,7); g.fill();
+      g.beginPath(); g.arc(px,py,2+q*6,0,7); g.fill();
     }
   }
   g.restore();
